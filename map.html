@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>H1E 謎解き - 校内マップ</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <aside id="sidebar">
+      <button id="toggle-sidebar">サイドバーを閉じる</button>
+      <div id="status-content">
+        <h2>🏆 達成状況</h2>
+        <ul id="achievement-list"></ul>
+        <p id="quiz-count">クリア数: 0 / 3</p>
+      </div>
+    </aside>
+    <header>
+      <button id="menu-button">
+        <span class="hamburger-icon"></span>
+        <span class="hamburger-icon"></span>
+        <span class="hamburger-icon"></span>
+      </button>
+      <p id="user-info">ようこそ、[ニックネーム]さん！</p>
+    </header>
+
+    <main>
+      <h1>謎の目標地点</h1>
+
+      <div id="map-container">
+        <div id="map">
+          <div id="map-overlay"></div>
+          <img id="custom-map-image" src="S__3383319.jpg" alt="学校マップ" />
+        </div>
+        <p id="location-status">位置情報を取得中...</p>
+      </div>
+
+      <div id="quiz-entry-container" class="hidden">
+        <h2 id="quiz-name">謎の場所です！</h2>
+        <button id="start-quiz-button">謎解きページへ進む</button>
+      </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+      // 謎のターゲット定義
+      const QUIZ_TARGETS = [
+        {
+          id: "謎1",
+          name: "謎1: 図書館付近 (3F)",
+          img_y: 20,
+          img_x: 25,
+          lat: 35.7564606,
+          lon: 139.6792595,
+          page: "quiz_page_1.html",
+        },
+        {
+          id: "謎2",
+          name: "謎2: 職員室付近 (3F)",
+          img_y: 20,
+          img_x: 71,
+          lat: 35.75665,
+          lon: 139.6786892,
+          page: "quiz_page_2.html",
+        },
+        {
+          id: "謎3",
+          name: "謎3: 2F M2A付近",
+          img_y: 65,
+          img_x: 30,
+          lat: 35.7562824,
+          lon: 139.6797222,
+          page: "quiz_page_3.html",
+        },
+      ];
+
+      const PROXIMITY_THRESHOLD_M = 20;
+      let currentAchievement = [];
+      let watchId;
+
+      function drawQuizPins() {
+        const overlay = document.getElementById("map-overlay");
+        overlay.innerHTML = "";
+        currentAchievement = localStorage.getItem("h1e_achievements")
+          ? JSON.parse(localStorage.getItem("h1e_achievements"))
+          : [];
+        QUIZ_TARGETS.forEach((quiz) => {
+          if (!currentAchievement.includes(quiz.id)) {
+            const pin = document.createElement("div");
+            pin.className = "quiz-pin";
+            pin.title = quiz.name;
+            pin.style.top = `${quiz.img_y}%`;
+            pin.style.left = `${quiz.img_x}%`;
+            pin.setAttribute("data-quiz-id", quiz.id);
+            overlay.appendChild(pin);
+          }
+        });
+        if (typeof loadAchievements === "function") {
+          loadAchievements();
+        }
+      }
+
+      function startLocationWatch() {
+        const statusElement = document.getElementById("location-status");
+        if (!navigator.geolocation) {
+          statusElement.textContent = "エラー: 位置情報に対応していません。";
+          return;
+        }
+        const options = {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0,
+        };
+        watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            statusElement.textContent = `現在地: 緯度 ${lat.toFixed(
+              6
+            )}, 経度 ${lon.toFixed(
+              6
+            )} (精度: ${position.coords.accuracy.toFixed(1)}m)`;
+            checkProximity(lat, lon);
+          },
+          (error) => {
+            statusElement.textContent = `エラー: 位置情報取得に失敗 (${error.code})。`;
+            console.error("Geolocation Error:", error.message);
+          },
+          options
+        );
+      }
+
+      function checkProximity(userLat, userLon) {
+        let isNearAnyQuiz = false;
+        let targetQuiz = null;
+        const unClearedQuizzes = QUIZ_TARGETS.filter(
+          (q) => !currentAchievement.includes(q.id)
+        );
+        for (const quiz of unClearedQuizzes) {
+          const distance = calculateDistance(
+            userLat,
+            userLon,
+            quiz.lat,
+            quiz.lon
+          );
+          if (distance <= PROXIMITY_THRESHOLD_M) {
+            isNearAnyQuiz = true;
+            targetQuiz = quiz;
+            break;
+          }
+        }
+        const container = document.getElementById("quiz-entry-container");
+        const quizNameElement = document.getElementById("quiz-name");
+        const startButton = document.getElementById("start-quiz-button");
+        if (isNearAnyQuiz && targetQuiz) {
+          container.classList.remove("hidden");
+          quizNameElement.textContent = `${targetQuiz.name} に近づきました！`;
+          document
+            .querySelectorAll(".quiz-pin")
+            .forEach((p) => p.classList.remove("blinking"));
+          const pinElement = document.querySelector(
+            `.quiz-pin[data-quiz-id="${targetQuiz.id}"]`
+          );
+          if (pinElement) pinElement.classList.add("blinking");
+          startButton.onclick = () => {
+            window.location.href = targetQuiz.page;
+          };
+        } else {
+          container.classList.add("hidden");
+          document
+            .querySelectorAll(".quiz-pin")
+            .forEach((p) => p.classList.remove("blinking"));
+        }
+      }
+
+      function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3;
+        const φ1 = (lat1 * Math.PI) / 180;
+        const φ2 = (lat2 * Math.PI) / 180;
+        const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+        const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+        const a =
+          Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+          Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+      }
+
+      // 🚨 修正点3: DOMContentLoadedで全ての初期化を実行 🚨
+      document.addEventListener("DOMContentLoaded", () => {
+        let nickname = sessionStorage.getItem("currentNickname");
+        if (!nickname) {
+          alert("エラー: ユーザー情報が確認できません。登録ページに戻ります。");
+          window.location.href = "index.html";
+          return;
+        }
+        document.getElementById(
+          "user-info"
+        ).textContent = `ようこそ、${nickname}さん！`;
+
+        // ピンの描画とGPS監視を開始
+        drawQuizPins();
+        startLocationWatch();
+      });
+    </script>
+  </body>
+</html>

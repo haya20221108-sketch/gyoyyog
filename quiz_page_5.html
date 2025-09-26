@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>H1E 謎解き - 謎5 (最終謎)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <aside id="sidebar">
+      <button id="toggle-sidebar">サイドバーを閉じる</button>
+      <div id="status-content">
+        <h2>🏆 達成状況</h2>
+        <ul id="achievement-list"></ul>
+        <p id="quiz-count">クリア数: 0 / 3</p>
+      </div>
+    </aside>
+
+    <header>
+      <button id="menu-button">
+        <span class="hamburger-icon"></span>
+        <span class="hamburger-icon"></span>
+        <span class="hamburger-icon"></span>
+      </button>
+      <p id="user-info">ようこそ、[ニックネーム]さんの最終謎</p>
+    </header>
+
+    <main>
+      <h1>謎5: 最終謎</h1>
+      <div id="quiz-content">
+        <p>次の謎をとけ</p>
+        <img id="quiz-image" src="S__4677636.jpg" alt="謎5の画像" />
+        <form id="answerForm">
+          <div class="form-group">
+            <label for="answer">解答を入力してください:</label>
+            <input type="text" id="answer" required />
+          </div>
+          <button type="submit">解答する</button>
+        </form>
+        <p id="feedbackMessage" style="margin-top: 15px; font-weight: bold"></p>
+      </div>
+      <h2>ヒント</h2>
+
+      <div class="hint-toggle-group">
+        <div id="single-hint-header" class="hint-header">
+          <span>【タップで表示】この謎に関するヒントを見る</span>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div id="single-hint-content" class="hint-content">
+          <p>
+            <strong>ヒントの内容:</strong>
+            これまでに解いた「謎1」「謎2」「謎3」の答えを、**ある順番**で並べてみましょう。
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+      const QUIZ_ID = "謎5";
+      // 🚨 正しい答えを設定してください 🚨
+      const CORRECT_ANSWERS = ["空間", "くうかん"];
+      const NEXT_PAGE_URL = "final.html";
+      // 謎1, 謎2, 謎3, 謎5 の4つで構成すると想定し、謎4を削除
+      const ALL_QUIZ_IDS = ["謎1", "謎2", "謎3", QUIZ_ID];
+
+      let nickname = sessionStorage.getItem("currentNickname");
+      const feedbackMessage = document.getElementById("feedbackMessage");
+      const answerForm = document.getElementById("answerForm");
+
+      // common.jsの関数を再定義せず、そのまま利用できるか確認
+      function getAchievements() {
+        const savedData = localStorage.getItem("h1e_achievements");
+        return savedData ? JSON.parse(savedData) : [];
+      }
+
+      function setQuizCleared(id, answer) {
+        const achievements = getAchievements();
+        if (!achievements.includes(id)) {
+          achievements.push(id);
+          localStorage.setItem(
+            "h1e_achievements",
+            JSON.stringify(achievements)
+          );
+        }
+        sessionStorage.setItem(`${id}_answer`, answer);
+      }
+
+      /**
+       * これまでの全ての答えを連結して最終カスタムコードを生成します。
+       * @param {string} finalAnswer - 謎5の解答。
+       * @returns {string} - 連結されたカスタムコード。
+       */
+      function generateCustomCode(finalAnswer) {
+        let combinedAnswerString = "H1E-"; // 識別子を付与
+
+        // 謎1, 謎2, 謎3の答えを連結
+        ALL_QUIZ_IDS.forEach((id) => {
+          const answer = sessionStorage.getItem(`${id}_answer`);
+          if (answer) {
+            combinedAnswerString += answer.toUpperCase().replace(/\s/g, ""); // 大文字にし、空白を除去
+          } else {
+            // 答えが一つでもない場合は、不完全なコードを返す (デバッグ用)
+            combinedAnswerString += "MISSING-";
+          }
+        });
+
+        // 謎5の答えが finalAnswer として既に含まれているので、そのまま返す
+        return combinedAnswerString;
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        if (!nickname) {
+          alert("ユーザー情報が見つかりません。");
+          window.location.href = "index.html";
+          return;
+        }
+        document.getElementById(
+          "user-info"
+        ).textContent = `ようこそ、${nickname}さんの最終謎`;
+
+        // サイドバーの初期化
+        if (typeof loadAchievements === "function") {
+          loadAchievements();
+        }
+
+        // 既にクリア済みかチェック
+        if (getAchievements().includes(QUIZ_ID)) {
+          feedbackMessage.style.color = "blue";
+          feedbackMessage.textContent =
+            "この謎は既にクリア済みです。ゴールへ進みましょう。";
+          answerForm.querySelector("button").disabled = true;
+          // 既にクリア済みの場合は、最終ページへのナビゲーションを設定
+          answerForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            window.location.href = NEXT_PAGE_URL;
+          });
+          return;
+        }
+
+        // 解答フォームのイベントリスナー
+        answerForm.addEventListener("submit", function (event) {
+          event.preventDefault();
+
+          const userAnswer = document.getElementById("answer").value.trim();
+          // 大文字に変換して比較
+          const isCorrect = CORRECT_ANSWERS.map((ans) =>
+            ans.toUpperCase()
+          ).includes(userAnswer.toUpperCase());
+
+          if (isCorrect) {
+            feedbackMessage.style.color = "green";
+            feedbackMessage.textContent = "大正解です！ゴールへ進みます。";
+
+            // 1. ローカルクリア情報を保存
+            setQuizCleared(QUIZ_ID, userAnswer);
+
+            // 2. 最終カスタムコードを生成し、sessionStorageに保存
+            const finalCustomCode = generateCustomCode(userAnswer);
+            // 🚨 final.htmlでコード表示に使用するキーに修正 🚨
+            sessionStorage.setItem("FINAL_CORRECT_CODE", finalCustomCode);
+            console.log("生成されたカスタムコード:", finalCustomCode);
+
+            setTimeout(() => {
+              window.location.href = NEXT_PAGE_URL;
+            }, 1000);
+          } else {
+            feedbackMessage.style.color = "red";
+            feedbackMessage.textContent = "不正解です。もう一度考えましょう。";
+          }
+        });
+
+        // ヒントトグルのロジック
+        const header = document.getElementById("single-hint-header");
+        const content = document.getElementById("single-hint-content");
+
+        if (header && content) {
+          header.addEventListener("click", () => {
+            header.classList.toggle("active");
+            content.classList.toggle("active");
+            if (header.classList.contains("active")) {
+              console.log("💡 ヒントが表示されました。");
+            } else {
+              console.log("ヒントが閉じられました。");
+            }
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

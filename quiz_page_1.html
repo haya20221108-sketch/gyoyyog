@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>H1E 謎解き - 謎1</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <aside id="sidebar">
+      <button id="toggle-sidebar">サイドバーを閉じる</button>
+      <div id="status-content">
+        <h2>🏆 達成状況</h2>
+        <ul id="achievement-list"></ul>
+        <p id="quiz-count">クリア数: 0 / 3</p>
+        <div id="final-quiz-container" style="margin-top: 20px">
+          <button id="go-to-final-quiz">最終謎（謎5）へ進む！</button>
+        </div>
+      </div>
+    </aside>
+
+    <header>
+      <button id="menu-button">
+        <span class="hamburger-icon"></span>
+        <span class="hamburger-icon"></span>
+        <span class="hamburger-icon"></span>
+      </button>
+      <p id="user-info">[ニックネーム]さんの謎解き</p>
+    </header>
+
+    <main>
+      <h1>謎1: 図書館付近</h1>
+      <div id="quiz-content">
+        <p>次の問題をとけ</p>
+        <img id="quiz-image" src="S__15089721_0.jpg" alt="謎の問題画像" />
+        <form id="answerForm">
+          <div class="form-group">
+            <label for="answer">解答を入力してください:</label>
+            <input type="text" id="answer" required />
+          </div>
+          <button type="submit">解答する</button>
+        </form>
+        <p id="feedbackMessage" style="margin-top: 15px; font-weight: bold"></p>
+      </div>
+      <h2>ヒント</h2>
+
+      <div class="hint-toggle-group">
+        <div id="single-hint-header" class="hint-header">
+          <span>【タップで表示】この謎に関するヒントを見る</span>
+          <span class="toggle-icon">▼</span>
+        </div>
+        <div id="single-hint-content" class="hint-content">
+          <p>
+            <strong>ヒントの内容:</strong>
+            1週間をひらがなに直してますにいれてください
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const QUIZ_ID = "謎1";
+      const CORRECT_ANSWERS = ["確認", "かくにん"]; // 正しい答え
+      const NEXT_PAGE_URL = "map.html";
+
+      let nickname = sessionStorage.getItem("currentNickname");
+      const feedbackMessage = document.getElementById("feedbackMessage");
+      const answerForm = document.getElementById("answerForm");
+
+      function getAchievements() {
+        const savedData = localStorage.getItem("h1e_achievements");
+        return savedData ? JSON.parse(savedData) : [];
+      }
+
+      function setQuizCleared(id, answer) {
+        const achievements = getAchievements();
+        if (!achievements.includes(id)) {
+          achievements.push(id);
+          localStorage.setItem(
+            "h1e_achievements",
+            JSON.stringify(achievements)
+          );
+        }
+        sessionStorage.setItem(`${id}_answer`, answer);
+      }
+
+      window.onload = function () {
+        if (!nickname) {
+          alert("ユーザー情報が見つかりません。");
+          window.location.href = "index.html";
+          return;
+        }
+        document.getElementById(
+          "user-info"
+        ).textContent = `${nickname}さんの謎解き`;
+
+        // 🚨 共通スクリプトの関数をイベントに結びつける 🚨
+        if (typeof loadAchievements === "function") {
+          loadAchievements();
+          document
+            .getElementById("menu-button")
+            .addEventListener("click", toggleSidebar);
+          document
+            .getElementById("toggle-sidebar")
+            .addEventListener("click", toggleSidebar);
+          document
+            .getElementById("go-to-final-quiz")
+            .addEventListener("click", goToFinalQuiz);
+        }
+
+        if (getAchievements().includes(QUIZ_ID)) {
+          feedbackMessage.style.color = "blue";
+          feedbackMessage.textContent =
+            "この謎は既にクリア済みです。マップに戻って次の謎を探しましょう。";
+          answerForm.querySelector("button").disabled = true;
+        }
+      };
+
+      answerForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        if (getAchievements().includes(QUIZ_ID)) {
+          window.location.href = NEXT_PAGE_URL;
+          return;
+        }
+
+        const userAnswer = document
+          .getElementById("answer")
+          .value.trim()
+          .toUpperCase();
+
+        const isCorrect = CORRECT_ANSWERS.map((ans) =>
+          ans.toUpperCase()
+        ).includes(userAnswer);
+
+        if (isCorrect) {
+          feedbackMessage.style.color = "green";
+          feedbackMessage.textContent = "正解です！マップに戻ります。";
+
+          // 謎をクリア済みに設定し、答えを保存
+          setQuizCleared(QUIZ_ID, userAnswer);
+
+          setTimeout(() => {
+            window.location.href = NEXT_PAGE_URL;
+          }, 1000);
+        } else {
+          feedbackMessage.style.color = "red";
+          feedbackMessage.textContent = "不正解です。もう一度考えましょう。";
+        }
+      });
+      // 謎のページ内の <script> タグ内に追記
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const header = document.getElementById("single-hint-header");
+        const content = document.getElementById("single-hint-content");
+
+        if (header && content) {
+          header.addEventListener("click", () => {
+            // active クラスをトグルする
+            header.classList.toggle("active");
+            content.classList.toggle("active");
+
+            if (header.classList.contains("active")) {
+              console.log("💡 ヒントが表示されました。");
+            } else {
+              console.log("ヒントが閉じられました。");
+            }
+          });
+        }
+      });
+    </script>
+    <script src="common.js"></script>
+  </body>
+</html>

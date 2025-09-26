@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>H1E 謎解き - GPSチェック</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header><p id="user-info">GPS位置情報 確認</p></header>
+
+    <main>
+      <h1>位置情報機能チェック</h1>
+      <p>
+        謎解きマップでは現在地を利用します。以下のボタンを押して、端末とブラウザが位置情報（GPS）の利用を許可しているか確認してください。
+      </p>
+
+      <div class="container">
+        <button id="check-button">位置情報の利用を許可する</button>
+        <p
+          id="message"
+          style="margin-top: 15px; font-weight: bold; color: #00796b"
+        >
+          👆 ボタンを押し、ポップアップで「許可」を選択してください。
+        </p>
+
+        <div
+          id="status-box"
+          class="hidden"
+          style="
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #4caf50;
+            background-color: #e8f5e9;
+          "
+        >
+          <p>
+            ステータス:
+            <span id="gps-status" style="color: green; font-weight: bold"
+              >取得成功</span
+            >
+          </p>
+          <p>システムが位置情報を認識しました。マップへ進んでください。</p>
+        </div>
+
+        <button
+          id="start-button"
+          disabled
+          style="margin-top: 20px; background-color: #4caf50"
+        >
+          謎解きマップへ進む
+        </button>
+      </div>
+    </main>
+
+    <script>
+      const NEXT_PAGE_URL = "map.html";
+      const checkButton = document.getElementById("check-button");
+      const startButton = document.getElementById("start-button");
+      const messageDisplay = document.getElementById("message");
+      const statusBox = document.getElementById("status-box");
+
+      checkButton.addEventListener("click", startLocationCheck);
+      startButton.addEventListener("click", () => {
+        window.location.href = NEXT_PAGE_URL;
+      });
+
+      function startLocationCheck() {
+        if (!("geolocation" in navigator)) {
+          updateStatus(
+            "このブラウザは位置情報に対応していません。",
+            "red",
+            false
+          );
+          return;
+        }
+
+        checkButton.disabled = true;
+        updateStatus("GPSの利用許可を確認中...", "orange", false);
+
+        // 位置情報取得を試みる
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            // 成功時 (位置情報が取れている)
+            handleSuccess();
+          },
+          (error) => {
+            // 失敗時 (許可拒否、タイムアウトなど)
+            handleError(error);
+          },
+          {
+            timeout: 5000, // 5秒でタイムアウト
+            maximumAge: 0,
+          }
+        );
+      }
+
+      function handleSuccess() {
+        updateStatus("位置情報の利用が許可されました！", "green", true);
+        statusBox.classList.remove("hidden");
+        checkButton.style.display = "none"; // チェックボタンを非表示に
+        startButton.disabled = false;
+      }
+
+      function handleError(error) {
+        let errorMessage = "位置情報取得に失敗しました。";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage =
+              "【拒否されました】ブラウザの設定で位置情報の利用を許可してください。";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "【機能エラー】位置情報が取得できません。";
+            break;
+          case error.TIMEOUT:
+            errorMessage =
+              "【タイムアウト】電波の良い場所で再試行してください。";
+            break;
+        }
+        updateStatus(errorMessage, "red", false);
+        checkButton.disabled = false;
+        startButton.disabled = true;
+        statusBox.classList.add("hidden");
+      }
+
+      function updateStatus(message, color, isSuccess) {
+        messageDisplay.textContent = message;
+        messageDisplay.style.color = color;
+        if (isSuccess) {
+          document.getElementById("gps-status").textContent = "取得成功";
+        } else {
+          document.getElementById("gps-status").textContent = "エラー";
+        }
+      }
+    </script>
+  </body>
+</html>

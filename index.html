@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>H1E 謎解き - 参加登録</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header><p>H1E 謎解き</p></header>
+
+    <main>
+      <h1>参加登録</h1>
+      <p>ニックネームと学年を登録してゲームを始めましょう。</p>
+
+      <div class="container">
+        <form id="registrationForm">
+          <div class="form-group">
+            <label for="nickname-input">ニックネーム (必須項目)</label>
+            <input
+              type="text"
+              id="nickname-input"
+              name="nickname"
+              required
+              maxlength="10"
+            />
+          </div>
+          <div class="form-group">
+            <label for="grade-select">学年(必須項目)</label>
+            <select id="grade-select" name="grade" required>
+              <option value="" disabled selected>選択してください</option>
+              <option value="1年生">中学1年生</option>
+              <option value="2年生">中学2年生</option>
+              <option value="3年生">中学3年生</option>
+              <option value="4年生">高校1年生</option>
+              <option value="5年生">高校2年生</option>
+              <option value="6年生">高校3年生</option>
+              <option value="大学生以上">大学生以上</option>
+              <option value="小学生">小学生</option>
+            </select>
+          </div>
+          <button type="submit" id="registerButton">謎解きにすすむ</button>
+        </form>
+        <p id="statusMessage" style="margin-top: 15px; font-weight: bold"></p>
+      </div>
+    </main>
+
+    <script>
+      // フォームの送信やボタンのクリック時に実行される関数
+      function saveNicknameAndStart(event) {
+        // 🚨 URLへの干渉を防ぐための必須修正 🚨
+        // 正しくは preventDefault() です。フォーム送信のデフォルト動作をキャンセルします。
+        if (event) {
+          event.preventDefault();
+        }
+
+        // 🚨 IDをHTMLに合わせて 'nickname-input' に修正しました 🚨
+        const nicknameInput = document.getElementById("nickname-input");
+        const nickname = nicknameInput ? nicknameInput.value.trim() : "";
+
+        // フォームバリデーションをJavaScript側でも行う
+        if (!nickname) {
+          alert("ニックネームを入力してください。");
+          return;
+        }
+        const gradeSelect = document.getElementById("grade-select");
+        if (!gradeSelect || gradeSelect.value === "") {
+          alert("学年を選択してください。");
+          return;
+        }
+
+        sessionStorage.setItem("currentNickname", nickname);
+
+        // 🚨 1. イベント日と時刻の保存ロジック 🚨
+        const now = new Date();
+        const currentYear = now.getFullYear();
+
+        // 月は0から始まるため、9月は「8」です。
+        const eventDay1 = new Date(currentYear, 8, 27); // 9月27日 (1日目)
+        const eventDay2 = new Date(currentYear, 8, 28); // 9月28日 (2日目)
+
+        const today = new Date(currentYear, now.getMonth(), now.getDate());
+
+        let dayIdentifier = "0";
+
+        if (today.getTime() === eventDay1.getTime()) {
+          dayIdentifier = "1";
+        } else if (today.getTime() === eventDay2.getTime()) {
+          dayIdentifier = "2";
+        }
+
+        const hours = String(now.getHours()).padStart(2, "0");
+        const minutes = String(now.getMinutes()).padStart(2, "0");
+        const timeCode = hours + minutes;
+
+        // 🚨 2. 学年コードの取得と保存ロジック 🚨
+        // 🚨 IDをHTMLに合わせて 'grade-select' に修正しました 🚨
+        let gradeIdentifier = "0";
+        const selectedGrade = gradeSelect.value;
+
+        // 学年の最初の数字を取り出して保存 ('1年生' -> '1', '大学生以上' -> '9' など)
+        if (selectedGrade.includes("1")) {
+          gradeIdentifier = "1";
+        } else if (selectedGrade.includes("2")) {
+          gradeIdentifier = "2";
+        } else if (selectedGrade.includes("3")) {
+          gradeIdentifier = "3";
+          // 高校生は4, 5, 6
+        } else if (selectedGrade.includes("4")) {
+          gradeIdentifier = "4";
+        } else if (selectedGrade.includes("5")) {
+          gradeIdentifier = "5";
+        } else if (selectedGrade.includes("6")) {
+          gradeIdentifier = "6";
+        } else if (selectedGrade.includes("小学生")) {
+          gradeIdentifier = "S"; // S, 9, 0など1桁の英数字に設定
+        } else if (selectedGrade.includes("大学生")) {
+          gradeIdentifier = "A"; // A, 9, 0など1桁の英数字に設定
+        }
+
+        // セッションストレージに保存
+        sessionStorage.setItem("dayIdentifier", dayIdentifier);
+        sessionStorage.setItem("timeCode", timeCode);
+        sessionStorage.setItem("gradeIdentifier", gradeIdentifier);
+
+        // ゲーム開始ページへ遷移
+        window.location.href = "map.html";
+      }
+
+      // ページが完全にロードされたらイベントリスナーを設定
+      document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("registrationForm");
+        // フォーム送信時に saveNicknameAndStart 関数を実行
+        if (form) {
+          form.addEventListener("submit", saveNicknameAndStart);
+        }
+      });
+    </script>
+  </body>
+</html>

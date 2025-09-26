@@ -1,0 +1,381 @@
+/* ==================================== */
+/* 1. 全体とフォントのリセット */
+/* ==================================== */
+body {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f7f6; /* 薄い背景色 */
+  color: #333;
+  line-height: 1.6;
+}
+
+main {
+  padding: 20px;
+  max-width: 800px;
+  margin: 20px auto;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+h1 {
+  color: #004d40;
+  border-bottom: 2px solid #b2dfdb;
+  padding-bottom: 10px;
+  margin-top: 0;
+}
+
+#quiz-image {
+  /* 画像の最大幅を親要素に合わせる */
+  max-width: 100%;
+  /* ブロック要素として中央揃え */
+  display: block;
+  margin: 20px auto;
+  /* 画像がはみ出さないように高さを自動調整 */
+  height: auto;
+  /* 必要に応じて、画像の実際のサイズを指定 */
+  /* width: 400px; */
+}
+/* ==================================== */
+/* 2. ヘッダーとハンバーガーメニュー */
+/* ==================================== */
+header {
+  background-color: #00796b; /* テーマカラー（濃い緑） */
+  color: white;
+  padding: 10px 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 2000; /* 最前面 */
+  display: flex;
+  justify-content: space-between; /* ニックネームとメニューボタンを両端に配置 */
+  align-items: center;
+}
+
+header p {
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+#menu-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  z-index: 2001;
+}
+
+.hamburger-icon {
+  display: block;
+  width: 25px;
+  height: 3px;
+  background-color: white;
+  margin: 5px 0;
+  transition: 0.3s;
+}
+
+/* ==================================== */
+/* 3. サイドバー (達成状況) のスタイル */
+/* ==================================== */
+#sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100vh; /* 画面いっぱいの高さ */
+  background-color: #e0f2f1;
+  border-right: 3px solid #00796b;
+  padding: 20px;
+  box-shadow: 5px 0 10px rgba(0, 0, 0, 0.2);
+  transform: translateX(-100%); /* デフォルトで画面外に隠す */
+  transition: transform 0.4s ease;
+  z-index: 1500;
+  overflow-y: auto;
+}
+
+/* サイドバーが開いた状態 */
+#sidebar.active {
+  transform: translateX(0);
+}
+
+/* サイドバー内部の閉じるボタン */
+#toggle-sidebar {
+  background-color: #00796b;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  width: 100%;
+  margin-bottom: 20px;
+  transition: background-color 0.3s;
+}
+
+#toggle-sidebar:hover {
+  background-color: #004d40;
+}
+
+#achievement-list {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 15px;
+}
+
+#achievement-list li {
+  padding: 5px 0;
+  border-bottom: 1px dotted #b2dfdb;
+}
+
+/* ==================================== */
+/* 4. マップとピンのスタイル */
+/* ==================================== */
+#map-container {
+  padding: 0;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+#map {
+  position: relative;
+  width: 100%;
+}
+
+#map-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10; /* 画像の上に表示 */
+}
+
+#custom-map-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  z-index: 1; /* 画像を背面に */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* ピンの基本スタイル */
+.quiz-pin {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: #d32f2f; /* 赤いピンの色 */
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+  transform: translate(-50%, -50%); /* 中央寄せ */
+  z-index: 50; /* 確実に最前面に */
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.quiz-pin:hover {
+  background-color: #b71c1c;
+  transform: translate(-50%, -50%) scale(1.2);
+}
+
+/* 4-1. 近づいたときの点滅アニメーション */
+@keyframes proximity-blink {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 10px 3px rgba(255, 255, 0, 0.8);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 3px 0px rgba(255, 255, 0, 0.1);
+  }
+}
+
+.quiz-pin.blinking {
+  background-color: #ffc107; /* 点滅中は明るい黄色 */
+  animation: proximity-blink 0.8s infinite alternate;
+}
+
+/* ==================================== */
+/* 5. フォームとUI要素 */
+/* ==================================== */
+#location-status {
+  margin-top: 15px;
+  font-size: 0.9em;
+  color: #555;
+  text-align: center;
+}
+
+#quiz-entry-container {
+  background-color: #f1f8e9; /* 薄い緑の背景 */
+  padding: 15px;
+  border: 2px solid #4caf50;
+  border-radius: 8px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+#quiz-entry-container h2 {
+  color: #4caf50;
+  margin-top: 0;
+}
+
+button {
+  background-color: #00796b;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+  width: 100%; /* フォーム内のボタンは幅100% */
+}
+
+button:hover:not(:disabled) {
+  background-color: #004d40;
+}
+
+button:disabled {
+  background-color: #b0b0b0;
+  cursor: not-allowed;
+}
+
+.hidden {
+  display: none !important;
+}
+/* ==================================== */
+/* 6. フォームとコンテナの基本スタイル (index.html / location_check.html向け) */
+/* ==================================== */
+
+.container {
+  max-width: 400px;
+  margin: 30px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  text-align: center; /* ボタンなどを中央に寄せる */
+}
+
+.container h1,
+.container h2 {
+  color: #00796b;
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  text-align: left;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #333;
+}
+
+input[type="text"] {
+  width: calc(100% - 20px); /* 全幅からパディング分を引く */
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box; /* パディングとボーダーを幅に含める */
+  font-size: 1em;
+}
+input[type="text"],
+select {
+  /* 🚨 select要素を追加 🚨 */
+  width: calc(100% - 20px); /* 全幅からパディング分を引く */
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box; /* パディングとボーダーを幅に含める */
+  font-size: 1em;
+  appearance: none; /* ドロップダウンのデフォルトスタイルをリセット */
+  background-color: white; /* 背景色を指定 */
+}
+
+/* ドロップダウンのアロー（矢印）をカスタムするためのスタイル（モダンブラウザ向け） */
+select {
+  /* 必要に応じて、右側にカスタム矢印のアイコンを配置できます。 */
+  /* background-image: url('data:image/svg+xml;...'); */
+  padding-right: 30px; /* 矢印スペースを確保 */
+}
+/* ボタンはセクション5に既に定義されていますが、再確認として */
+/* button {
+  background-color: #00796b;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  margin-top: 10px;
+} */
+/* ヒントコンテナの基本スタイル */
+.hint-toggle-group {
+  margin: 15px 0;
+  border: 1px solid #00796b; /* テーマカラー */
+  border-radius: 6px;
+  overflow: hidden; /* 内容を隠すために必要 */
+}
+
+/* ヘッダー（タップする部分）のスタイル */
+.hint-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background-color: #e0f2f1; /* 薄い背景色 */
+  cursor: pointer;
+  font-weight: bold;
+  color: #004d40;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.hint-header:hover {
+  background-color: #b2dfdb;
+}
+
+/* 展開アイコンのスタイル */
+.toggle-icon {
+  font-size: 1.2em;
+  transform: rotate(0deg);
+  transition: transform 0.3s;
+}
+
+/* ヘッダーが開いている時のアイコンのスタイル */
+.hint-header.active .toggle-icon {
+  transform: rotate(180deg);
+}
+
+/* 隠す部分（ヒントの内容）のスタイル */
+.hint-content {
+  /* デフォルトで内容を隠す */
+  max-height: 0;
+  padding: 0 15px; /* 隠れている時はpaddingも0 */
+  background-color: #fff;
+  transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+  border-top: 1px solid #e0f2f1;
+}
+
+/* ヒントが表示された時のスタイル */
+.hint-content.active {
+  /* max-heightを十分に大きな値にして内容を表示 */
+  max-height: 300px; /* 内容に合わせて調整 */
+  padding: 15px;
+}
+
+/* ヒントテキストのスタイル */
+.hint-content p {
+  margin: 0;
+  color: #e65100; /* 目立つ色で注意を促す */
+  font-style: italic;
+}
