@@ -44,6 +44,7 @@
     <script src="common.js"></script>
     <script>
       // 謎のターゲット定義
+// 謎のターゲット定義
       const QUIZ_TARGETS = [
         {
           id: "謎1",
@@ -53,6 +54,7 @@
           lat: 35.7564606,
           lon: 139.6792595,
           page: "quiz_page_1.html",
+          threshold: 20, // 💡 謎1（体育館）の検出圏を20mに設定
         },
         {
           id: "謎2",
@@ -62,6 +64,7 @@
           lat: 35.7570619,
           lon: 139.6782479,
           page: "quiz_page_2.html",
+          threshold: 12, // 💡 謎2の検出圏を12mに設定
         },
         {
           id: "謎3",
@@ -71,14 +74,13 @@
           lat: 35.7566783,
           lon: 139.6785286,
           page: "quiz_page_3.html",
+          threshold: 12, // 💡 謎3の検出圏を12mに設定
         },
       ];
-
-      const PROXIMITY_THRESHOLD_M = 12
-      ;
+      
       let currentAchievement = [];
       let watchId;
-
+      
       function drawQuizPins() {
         const overlay = document.getElementById("map-overlay");
         overlay.innerHTML = "";
